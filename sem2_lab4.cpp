@@ -2,6 +2,12 @@
 // Лабораторная работа: №4, Вариант: 6
 // Студенит: Тимофеев Денис
 
+//TODO: Оптимизировать хранение данных или поиск данных из большого файла
+//TODO: Индексация векторов, если такое возможно
+//TODO: Вывести на экран данные для пользовательской точки с координатами (X, Y, Z)
+//TODO: Записать получившийся вектор во внешний файл
+//TODO: Записать в файл выборку согласно условию из ТЗ (Информация о средней температуре в каждый момент времени)
+
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -26,11 +32,25 @@ int main()
 	std::ifstream timeStampsFile("BD.txt");
 	std::ifstream coordsFile("BD_Coords.txt");
 
-	if (timeStampsFile.is_open() && coordsFile.is_open())
+	std::vector<std::vector<float>> dataCoords;
+
+	if (coordsFile.is_open())
 	{
-		std::string timeStampsLine;
 		std::string coordsLine;
 
+		//skip header
+		std::getline(coordsFile, coordsLine, '\n');
+		while (std::getline(coordsFile, coordsLine, '\n'))
+		{
+			dataCoords.push_back(split(coordsLine, '\t'));
+		}
+
+		coordsFile.close();
+	}
+
+	if (timeStampsFile.is_open())
+	{
+		std::string timeStampsLine;
 		std::vector<std::vector<float>> dataVector;
 
 		//skip header
@@ -39,34 +59,18 @@ int main()
 		{
 			std::vector<float> vectorLine = split(timeStampsLine, '\t');
 			float curPointID = vectorLine[1];
-
-			coordsFile.clear();
-			coordsFile.seekg(0);
-
-			//skip header
-			std::getline(coordsFile, coordsLine, '\n');
-			while (std::getline(coordsFile, coordsLine, '\n'))
+			for (auto& dataCoordsVector : dataCoords)
 			{
-				std::vector<float> vectorCoords = split(coordsLine, '\t');
-				if (curPointID == vectorCoords[0])
+				if (curPointID == dataCoordsVector[0])
 				{
-					vectorLine.push_back(vectorCoords[1]);
-					vectorLine.push_back(vectorCoords[2]);
-					vectorLine.push_back(vectorCoords[3]);
+					vectorLine.push_back(dataCoordsVector[1]);
+					vectorLine.push_back(dataCoordsVector[2]);
+					vectorLine.push_back(dataCoordsVector[3]);
 					dataVector.push_back(vectorLine);
 					break;
 				}
 			}
 		}
-
-		//TODO: Оптимизировать хранение данных или поиск данных из большого файла
-		//TODO: Индексация векторов, если такое возможно
-		//TODO: Вывести на экран данные для пользовательской точки с координатами (X, Y, Z)
-		//TODO: Записать получившийся вектор во внешний файл
-		//TODO: Записать в файл выборку согласно условию из ТЗ (Информация о средней температуре в каждый момент времени)
-
 		timeStampsFile.close();
-		coordsFile.close();
 	}
-
 }
