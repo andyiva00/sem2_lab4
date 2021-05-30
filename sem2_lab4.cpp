@@ -14,15 +14,21 @@
 #include <vector>
 #include <sstream>
 
-std::vector<float> split(const std::string str, char delim)
+std::vector<double> split(const std::string str, char delim)
 {
-	std::vector<float> tmpVector;
+	std::vector<double> tmpVector;
 	std::stringstream tmpStr;
 	tmpStr.str(str);
 	std::string segment;
+	
+	//int for ther first string
+	std::getline(tmpStr, segment, delim);
+	tmpVector.push_back(std::stoi(segment));
+	
+	//double for others
 	while (std::getline(tmpStr, segment, delim))
 	{
-		tmpVector.push_back(::atof(segment.c_str()));
+		tmpVector.push_back(std::stod(segment));
 	}
 	return tmpVector;
 }
@@ -32,7 +38,7 @@ int main()
 	std::ifstream timeStampsFile("BD.txt");
 	std::ifstream coordsFile("BD_Coords.txt");
 
-	std::vector<std::vector<float>> dataCoords;
+	std::vector<std::vector<double>> dataCoords;
 
 	if (coordsFile.is_open())
 	{
@@ -51,14 +57,14 @@ int main()
 	if (timeStampsFile.is_open())
 	{
 		std::string timeStampsLine;
-		std::vector<std::vector<float>> dataVector;
+		std::vector<std::vector<double>> dataVector;
 
 		//skip header
 		std::getline(timeStampsFile, timeStampsLine, '\n');
 		while (std::getline(timeStampsFile, timeStampsLine, '\n'))
 		{
-			std::vector<float> vectorLine = split(timeStampsLine, '\t');
-			float curPointID = vectorLine[1];
+			std::vector<double> vectorLine = split(timeStampsLine, '\t');
+			double curPointID = vectorLine[1];
 			for (auto& dataCoordsVector : dataCoords)
 			{
 				if (curPointID == dataCoordsVector[0])
