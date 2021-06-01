@@ -1,0 +1,2 @@
+Time	Point ID	Temperature	Displacement X	X	Y	Z
+0.05	7	335.353	-5.124e-06	0.00325	0	0.0065

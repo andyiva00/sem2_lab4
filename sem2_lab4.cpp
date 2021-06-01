@@ -23,17 +23,26 @@ std::vector<std::string> split(const std::string str, char delim)
 	return tmpVector;
 }
 
-int main()
+struct dataStruct
 {
-	std::ifstream timeStampsFile("BD.txt");
-	std::ifstream coordsFile("BD_Coords.txt");
+	std::vector<double> timeVector;
+	std::vector<int> pointIDVector;
+	std::vector<double> temperatureVector;
+	std::vector<double> displacementVector;
+	std::vector<double> xVector;
+	std::vector<double> yVector;
+	std::vector<double> zVector;
+};
+
+void PrepareData(dataStruct* preparedDataStruct, const char* timeStampsFileName, const char* coordsFileName)
+{
+	std::ifstream timeStampsFile(timeStampsFileName);
+	std::ifstream coordsFile(coordsFileName);
 
 	if (coordsFile.is_open() && timeStampsFile.is_open())
 	{
-		std::vector<int>	coordsPointIDVector;
-		std::vector<double> coordsXVector;
-		std::vector<double> coordsYVector;
-		std::vector<double> coordsZVector;
+		std::vector<int> coordsPointIDVector;
+		std::vector<double> coordsXVector, coordsYVector, coordsZVector;
 
 		std::string tmpString;
 
@@ -47,15 +56,10 @@ int main()
 			coordsYVector.push_back(std::stod(splitStringVector[2]));
 			coordsZVector.push_back(std::stod(splitStringVector[3]));
 		}
-				
-		std::vector<double> preparedTimeVector;
-		std::vector<int>	preparedPointIDVector;
-		std::vector<double> preparedTemperatureVector;
-		std::vector<double> preparedDisplacementVector;
-		std::vector<double> preparedXVector;
-		std::vector<double> preparedYVector;
-		std::vector<double> preparedZVector;
-		std::vector<std::variant<std::vector<int>, std::vector<double>>> dataPrepared;
+
+		std::vector<int> preparedPointIDVector;
+		std::vector<double> preparedTimeVector, preparedTemperatureVector, preparedDisplacementVector;
+		std::vector<double> preparedXVector, preparedYVector, preparedZVector;
 
 		//skip header
 		std::getline(timeStampsFile, tmpString, '\n');
@@ -67,38 +71,126 @@ int main()
 			it = std::find(coordsPointIDVector.begin(), coordsPointIDVector.end(), std::stoi(splitStringVector[1]));
 			if (it != coordsPointIDVector.end())
 			{
-				int index = std::distance(coordsPointIDVector.begin(), it);
+				int index = (int)std::distance(coordsPointIDVector.begin(), it);
 				preparedTimeVector.push_back(std::stod(splitStringVector[0]));
 				preparedPointIDVector.push_back(std::stoi(splitStringVector[1]));
 				preparedTemperatureVector.push_back(std::stod(splitStringVector[2]));
 				preparedDisplacementVector.push_back(std::stod(splitStringVector[3]));
 				preparedXVector.push_back(coordsXVector[index]);
-				preparedYVector.push_back(coordsXVector[index]);
-				preparedZVector.push_back(coordsXVector[index]);
+				preparedYVector.push_back(coordsYVector[index]);
+				preparedZVector.push_back(coordsZVector[index]);
 			}
 		}
 
-		dataPrepared.push_back(preparedTimeVector);
-		dataPrepared.push_back(preparedPointIDVector);
-		dataPrepared.push_back(preparedTemperatureVector);
-		dataPrepared.push_back(preparedDisplacementVector);
-		dataPrepared.push_back(preparedXVector);
-		dataPrepared.push_back(preparedYVector);
-		dataPrepared.push_back(preparedZVector);
-
-		preparedTimeVector.clear();
-		preparedPointIDVector.clear();
-		preparedTemperatureVector.clear();
-		preparedDisplacementVector.clear();
-		preparedXVector.clear();
-		preparedYVector.clear();
-		preparedZVector.clear();
-		coordsPointIDVector.clear();
-		coordsXVector.clear();
-		coordsYVector.clear();
-		coordsZVector.clear();
+		preparedDataStruct->timeVector = preparedTimeVector;
+		preparedDataStruct->pointIDVector = preparedPointIDVector;
+		preparedDataStruct->temperatureVector = preparedTemperatureVector;
+		preparedDataStruct->displacementVector = preparedDisplacementVector;
+		preparedDataStruct->xVector = preparedXVector;
+		preparedDataStruct->yVector = preparedYVector;
+		preparedDataStruct->zVector = preparedZVector;
 
 		coordsFile.close();
 		timeStampsFile.close();
 	}
+}
+
+void SavePreparedData(dataStruct *preparedDataStruct, const char* outFileName)
+{
+	std::ofstream outFile(outFileName);
+
+	if (outFile.is_open())
+	{
+		//output header
+		outFile << "Time\tPoint ID\tTemperature\tDisplacement X\tX\tY\tZ" << std::endl;
+
+		for (int i = 0; i < (int)preparedDataStruct->pointIDVector.size(); i++)
+		{
+			outFile << preparedDataStruct->timeVector[i] << '\t' << preparedDataStruct->pointIDVector[i] << '\t' <<
+				preparedDataStruct->temperatureVector[i] << '\t' << preparedDataStruct->displacementVector[i] << '\t' <<
+				preparedDataStruct->xVector[i] << '\t' << preparedDataStruct->yVector[i] << '\t' <<
+				preparedDataStruct->zVector[i] << std::endl;
+		}
+
+		outFile.close();
+	}
+}
+
+void SaveFiltredDate(dataStruct* filtredDataStruct, const char* outFileName)
+{
+	std::ofstream outFile(outFileName);
+
+	if (outFile.is_open())
+	{
+		//output header
+		outFile << "Time\tPoint ID\tTemperature\tDisplacement X\tX\tY\tZ" << std::endl;
+
+		for (int i = 0; i < (int)filtredDataStruct->pointIDVector.size(); i++)
+		{
+			outFile << filtredDataStruct->timeVector[i] << '\t' << filtredDataStruct->pointIDVector[i] << '\t' <<
+				filtredDataStruct->temperatureVector[i] << '\t' << filtredDataStruct->displacementVector[i] << '\t' <<
+				filtredDataStruct->xVector[i] << '\t' << filtredDataStruct->yVector[i] << '\t' <<
+				filtredDataStruct->zVector[i] << std::endl;
+		}
+
+		outFile.close();
+	}
+}
+
+void FilterPreparedData(dataStruct* preparedDataStruct, dataStruct* filtredDataStructPtr)
+{
+	double filterByX, filterByY, filterByZ, filterByTime;
+
+	std::cout << "Enter X: ";
+	std::cin >> filterByX;
+	std::cout << "Enter Y: ";
+	std::cin >> filterByY;
+	std::cout << "Enter Z: ";
+	std::cin >> filterByZ;
+	std::cout << "Enter Time: ";
+	std::cin >> filterByTime;
+
+	std::cout << "\nTime\tPoint ID\tTemperature\tDisplacement X\tX\tY\tZ" << std::endl;
+	for (int i = 0; i < (int)preparedDataStruct->pointIDVector.size(); i++)
+	{
+		if (preparedDataStruct->xVector[i] == filterByX
+			&& preparedDataStruct->yVector[i] == filterByY
+			&& preparedDataStruct->zVector[i] == filterByZ
+			&& preparedDataStruct->timeVector[i] == filterByTime)
+		{
+			filtredDataStructPtr->timeVector.push_back(preparedDataStruct->timeVector[i]);
+			filtredDataStructPtr->pointIDVector.push_back(preparedDataStruct->pointIDVector[i]);
+			filtredDataStructPtr->temperatureVector.push_back(preparedDataStruct->temperatureVector[i]);
+			filtredDataStructPtr->displacementVector.push_back(preparedDataStruct->displacementVector[i]);
+			filtredDataStructPtr->xVector.push_back(preparedDataStruct->xVector[i]);
+			filtredDataStructPtr->yVector.push_back(preparedDataStruct->yVector[i]);
+			filtredDataStructPtr->zVector.push_back(preparedDataStruct->zVector[i]);
+
+			std::cout << preparedDataStruct->timeVector[i] << '\t' << preparedDataStruct->pointIDVector[i] << '\t' <<
+				preparedDataStruct->temperatureVector[i] << '\t' << preparedDataStruct->displacementVector[i] << '\t' <<
+				preparedDataStruct->xVector[i] << '\t' << preparedDataStruct->yVector[i] << '\t' <<
+				preparedDataStruct->zVector[i] << std::endl;
+		}
+		
+	}
+
+}
+
+int main()
+{
+	dataStruct preparedDataStruct, * preparedDataStructPtr;
+	dataStruct filtredDataStruct, * filtredDataStructPtr;
+	preparedDataStructPtr = &preparedDataStruct;
+	filtredDataStructPtr = &filtredDataStruct;
+
+	// 1. Подготавливаем данные для обработки
+	PrepareData(preparedDataStructPtr, "BD.txt", "BD_Coords.txt");
+
+	// 2. Записываем подготовленные данные в файл
+	SavePreparedData(preparedDataStructPtr, "BD_Out.txt");
+
+	// 3. Взаимодействие с пользователем и сохранение отфильтрованных данных в файл
+	FilterPreparedData(preparedDataStructPtr, filtredDataStructPtr);
+	SaveFiltredDate(filtredDataStructPtr, "BD_FiltredOut.txt");
+	
 }
