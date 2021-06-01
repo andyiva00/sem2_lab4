@@ -7,7 +7,6 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
-#include <variant>
 
 std::vector<std::string> split(const std::string str, char delim)
 {
@@ -15,7 +14,7 @@ std::vector<std::string> split(const std::string str, char delim)
 	std::stringstream tmpStr;
 	tmpStr.str(str);
 	std::string segment;
-	
+
 	while (std::getline(tmpStr, segment, delim))
 	{
 		tmpVector.push_back(segment);
@@ -33,6 +32,27 @@ struct dataStruct
 	std::vector<double> yVector;
 	std::vector<double> zVector;
 };
+
+std::string GetHeaderString()
+{
+	std::string str = "Time\tPoint ID\tTemperature\tDisplacement X\tX\tY\tZ";
+	return str;
+}
+
+std::string GetBodyString(dataStruct* dataStruct, int i)
+{
+	std::stringstream ss;
+
+	ss << dataStruct->timeVector[i] << "\t"
+		<< dataStruct->pointIDVector[i] << "\t"
+		<< dataStruct->temperatureVector[i] << "\t"
+		<< dataStruct->displacementVector[i] << "\t"
+		<< dataStruct->xVector[i] << "\t"
+		<< dataStruct->yVector[i] << "\t"
+		<< dataStruct->zVector[i];
+
+	return ss.str();
+}
 
 void PrepareData(dataStruct* preparedDataStruct, const char* timeStampsFileName, const char* coordsFileName)
 {
@@ -95,45 +115,21 @@ void PrepareData(dataStruct* preparedDataStruct, const char* timeStampsFileName,
 	}
 }
 
-void SavePreparedData(dataStruct *preparedDataStruct, const char* outFileName)
+void SaveDataToFile(dataStruct* saveDataStruct, const char* outputFileName)
 {
-	std::ofstream outFile(outFileName);
+	std::ofstream outputFile(outputFileName);
 
-	if (outFile.is_open())
+	if (outputFile.is_open())
 	{
 		//output header
-		outFile << "Time\tPoint ID\tTemperature\tDisplacement X\tX\tY\tZ" << std::endl;
+		outputFile << GetHeaderString() << std::endl;
 
-		for (int i = 0; i < (int)preparedDataStruct->pointIDVector.size(); i++)
+		for (int i = 0; i < (int)saveDataStruct->pointIDVector.size(); i++)
 		{
-			outFile << preparedDataStruct->timeVector[i] << '\t' << preparedDataStruct->pointIDVector[i] << '\t' <<
-				preparedDataStruct->temperatureVector[i] << '\t' << preparedDataStruct->displacementVector[i] << '\t' <<
-				preparedDataStruct->xVector[i] << '\t' << preparedDataStruct->yVector[i] << '\t' <<
-				preparedDataStruct->zVector[i] << std::endl;
+			outputFile << GetBodyString(saveDataStruct, i) << std::endl;
 		}
 
-		outFile.close();
-	}
-}
-
-void SaveFiltredDate(dataStruct* filtredDataStruct, const char* outFileName)
-{
-	std::ofstream outFile(outFileName);
-
-	if (outFile.is_open())
-	{
-		//output header
-		outFile << "Time\tPoint ID\tTemperature\tDisplacement X\tX\tY\tZ" << std::endl;
-
-		for (int i = 0; i < (int)filtredDataStruct->pointIDVector.size(); i++)
-		{
-			outFile << filtredDataStruct->timeVector[i] << '\t' << filtredDataStruct->pointIDVector[i] << '\t' <<
-				filtredDataStruct->temperatureVector[i] << '\t' << filtredDataStruct->displacementVector[i] << '\t' <<
-				filtredDataStruct->xVector[i] << '\t' << filtredDataStruct->yVector[i] << '\t' <<
-				filtredDataStruct->zVector[i] << std::endl;
-		}
-
-		outFile.close();
+		outputFile.close();
 	}
 }
 
@@ -150,7 +146,7 @@ void FilterPreparedData(dataStruct* preparedDataStruct, dataStruct* filtredDataS
 	std::cout << "Enter Time: ";
 	std::cin >> filterByTime;
 
-	std::cout << "\nTime\tPoint ID\tTemperature\tDisplacement X\tX\tY\tZ" << std::endl;
+	std::cout << "\n" << GetHeaderString() << std::endl;
 	for (int i = 0; i < (int)preparedDataStruct->pointIDVector.size(); i++)
 	{
 		if (preparedDataStruct->xVector[i] == filterByX
@@ -166,14 +162,9 @@ void FilterPreparedData(dataStruct* preparedDataStruct, dataStruct* filtredDataS
 			filtredDataStructPtr->yVector.push_back(preparedDataStruct->yVector[i]);
 			filtredDataStructPtr->zVector.push_back(preparedDataStruct->zVector[i]);
 
-			std::cout << preparedDataStruct->timeVector[i] << '\t' << preparedDataStruct->pointIDVector[i] << '\t' <<
-				preparedDataStruct->temperatureVector[i] << '\t' << preparedDataStruct->displacementVector[i] << '\t' <<
-				preparedDataStruct->xVector[i] << '\t' << preparedDataStruct->yVector[i] << '\t' <<
-				preparedDataStruct->zVector[i] << std::endl;
+			std::cout << GetBodyString(preparedDataStruct, i) << std::endl;
 		}
-		
 	}
-
 }
 
 int main()
@@ -187,10 +178,10 @@ int main()
 	PrepareData(preparedDataStructPtr, "BD.txt", "BD_Coords.txt");
 
 	// 2. Записываем подготовленные данные в файл
-	SavePreparedData(preparedDataStructPtr, "BD_Out.txt");
+	SaveDataToFile(preparedDataStructPtr, "BD_Out.txt");
 
 	// 3. Взаимодействие с пользователем и сохранение отфильтрованных данных в файл
 	FilterPreparedData(preparedDataStructPtr, filtredDataStructPtr);
-	SaveFiltredDate(filtredDataStructPtr, "BD_FiltredOut.txt");
-	
+	SaveDataToFile(filtredDataStructPtr, "BD_FiltredOut.txt");
+
 }
