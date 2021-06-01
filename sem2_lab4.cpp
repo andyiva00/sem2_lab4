@@ -34,13 +34,10 @@ struct dataStruct
 	std::vector<double> zVector;
 };
 
-int main()
+void PrepareData(dataStruct* preparedDataStruct, const char* timeStampsFileName, const char* coordsFileName)
 {
-	std::ifstream timeStampsFile("BD.txt");
-	std::ifstream coordsFile("BD_Coords.txt");
-	std::ofstream outFile("BD_Out.txt");
-
-	dataStruct preparedDataStruct;
+	std::ifstream timeStampsFile(timeStampsFileName);
+	std::ifstream coordsFile(coordsFileName);
 
 	if (coordsFile.is_open() && timeStampsFile.is_open())
 	{
@@ -59,7 +56,7 @@ int main()
 			coordsYVector.push_back(std::stod(splitStringVector[2]));
 			coordsZVector.push_back(std::stod(splitStringVector[3]));
 		}
-		
+
 		std::vector<int> preparedPointIDVector;
 		std::vector<double> preparedTimeVector, preparedTemperatureVector, preparedDisplacementVector;
 		std::vector<double> preparedXVector, preparedYVector, preparedZVector;
@@ -85,31 +82,50 @@ int main()
 			}
 		}
 
-		preparedDataStruct.timeVector = preparedTimeVector;
-		preparedDataStruct.pointIDVector = preparedPointIDVector;
-		preparedDataStruct.temperatureVector = preparedTemperatureVector;
-		preparedDataStruct.displacementVector = preparedDisplacementVector;
-		preparedDataStruct.xVector = preparedXVector;
-		preparedDataStruct.yVector = preparedYVector;
-		preparedDataStruct.zVector = preparedZVector;
+		(*preparedDataStruct).timeVector = preparedTimeVector;
+		(*preparedDataStruct).pointIDVector = preparedPointIDVector;
+		(*preparedDataStruct).temperatureVector = preparedTemperatureVector;
+		(*preparedDataStruct).displacementVector = preparedDisplacementVector;
+		(*preparedDataStruct).xVector = preparedXVector;
+		(*preparedDataStruct).yVector = preparedYVector;
+		(*preparedDataStruct).zVector = preparedZVector;
 
 		coordsFile.close();
 		timeStampsFile.close();
 	}
+}
+
+void SavePreparedData(dataStruct *preparedDataStruct, const char* outFileName)
+{
+	std::ofstream outFile(outFileName);
 
 	if (outFile.is_open())
 	{
 		//output header
 		outFile << "Time\tPoint ID\tTemperature\tDisplacement X\tX\tY\tZ" << std::endl;
 
-		for (int i = 0; i < (int)preparedDataStruct.pointIDVector.size(); i++)
+		for (int i = 0; i < (int)(*preparedDataStruct).pointIDVector.size(); i++)
 		{
-			outFile << preparedDataStruct.timeVector[i] << '\t' << preparedDataStruct.pointIDVector[i] << '\t' <<
-				preparedDataStruct.temperatureVector[i] << '\t' << preparedDataStruct.displacementVector[i] << '\t' <<
-				preparedDataStruct.xVector[i] << '\t' << preparedDataStruct.yVector[i] << '\t' <<
-				preparedDataStruct.zVector[i] << std::endl;
+			outFile << (*preparedDataStruct).timeVector[i] << '\t' << (*preparedDataStruct).pointIDVector[i] << '\t' <<
+				(*preparedDataStruct).temperatureVector[i] << '\t' << (*preparedDataStruct).displacementVector[i] << '\t' <<
+				(*preparedDataStruct).xVector[i] << '\t' << (*preparedDataStruct).yVector[i] << '\t' <<
+				(*preparedDataStruct).zVector[i] << std::endl;
 		}
 
 		outFile.close();
 	}
+}
+
+int main()
+{
+	dataStruct preparedDataStruct, *preparedDataStructPtr;
+	preparedDataStructPtr = &preparedDataStruct;
+
+	// 1. Подготавливаем данные для обработки
+	PrepareData(preparedDataStructPtr, "BD.txt", "BD_Coords.txt");
+
+	// 2. Записываем подготовленные данные в файл
+	SavePreparedData(preparedDataStructPtr, "BD_Out.txt");
+
+	
 }
